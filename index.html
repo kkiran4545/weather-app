@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>🌤️ 3D Animated Weather App</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 1000px;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 25px;
+      padding: 2.5rem 3rem;
+      width: 360px;
+      color: white;
+      box-shadow:
+        0 8px 32px 0 rgba(31, 38, 135, 0.37),
+        0 0 0 1px rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      transform-style: preserve-3d;
+      transition: transform 0.1s ease;
+    }
+
+    h1 {
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+      font-size: 2.25rem;
+      text-align: center;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 15px;
+      border: none;
+      font-size: 1.1rem;
+      font-weight: 400;
+      margin-bottom: 1.5rem;
+      outline: none;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      box-shadow: inset 0 0 8px rgba(255,255,255,0.2);
+      transition: background 0.3s ease;
+    }
+
+    input::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+      font-style: italic;
+    }
+
+    input:focus {
+      background: rgba(255, 255, 255, 0.4);
+      box-shadow: 0 0 8px 2px #a18fff;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px 0;
+      border: none;
+      border-radius: 15px;
+      background: linear-gradient(45deg, #a18fff, #667eea);
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(161, 143, 255, 0.7);
+      transition: transform 0.2s ease, box-shadow 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.07);
+      box-shadow: 0 10px 25px rgba(161, 143, 255, 0.9);
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .weather {
+      margin-top: 2rem;
+      padding: 1.8rem 2rem;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.3);
+      text-align: center;
+      font-weight: 600;
+      font-size: 1.2rem;
+      line-height: 1.5;
+      display: none;
+      transform-style: preserve-3d;
+      user-select: text;
+    }
+
+    .weather h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    }
+
+    .error {
+      color: #ff6b6b;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* Floating animation for weather card */
+    @keyframes float {
+      0%, 100% { transform: translateY(0) }
+      50% { transform: translateY(-10px) }
+    }
+
+    .weather {
+      animation: float 6s ease-in-out infinite;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container" id="card">
+    <h1>🌤️ Weather</h1>
+    <input type="text" id="cityInput" placeholder="Enter city name..." autocomplete="off" />
+    <button id="getWeatherBtn">Get Weather</button>
+
+    <div id="weatherCard" class="weather"></div>
+  </div>
+
+  <script>
+    const card = document.getElementById('card');
+    const btn = document.getElementById('getWeatherBtn');
+    const weatherCard = document.getElementById('weatherCard');
+
+    // 3D tilt effect on mouse move
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left; // x position within the element
+      const y = e.clientY - rect.top;  // y position within the element
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const rotateX = ((y - centerY) / centerY) * 10; // max 10deg rotation
+      const rotateY = ((x - centerX) / centerX) * 10;
+
+      card.style.transform = `rotateX(${-rotateX}deg) rotateY(${rotateY}deg) scale(1.05)`;
+    });
+
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'rotateX(0) rotateY(0) scale(1)';
+    });
+
+    btn.addEventListener('click', getWeather);
+    document.getElementById('cityInput').addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') getWeather();
+    });
+
+    async function getWeather() {
+      const city = document.getElementById('cityInput').value.trim();
+      weatherCard.style.display = 'none';
+      weatherCard.innerHTML = '';
+
+      if (!city) {
+        weatherCard.innerHTML = '<p class="error">Please enter a city name.</p>';
+        weatherCard.style.display = 'block';
+        return;
+      }
+
+      try {
+        const url = `https://wttr.in/${encodeURIComponent(city)}?format=j1`;
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network error');
+
+        const data = await response.json();
+        const current = data.current_condition[0];
+
+        weatherCard.innerHTML = `
+          <h2>${city.charAt(0).toUpperCase() + city.slice(1)}</h2>
+          <p>🌡️ Temperature: ${current.temp_C} °C</p>
+          <p>💧 Humidity: ${current.humidity} %</p>
+          <p>🌬️ Wind Speed: ${current.windspeedKmph} km/h</p>
+          <p>🌥️ Condition: ${current.weatherDesc[0].value}</p>
+        `;
+        weatherCard.style.display = 'block';
+      } catch (error) {
+        weatherCard.innerHTML = '<p class="error">Error fetching weather. Try again later.</p>';
+        weatherCard.style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
